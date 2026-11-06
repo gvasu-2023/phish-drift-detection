@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+.ipynb_checkpoints/
+
+# Data — never commit raw data
+data/raw/*
+data/processed/*
+data/external/*
+!data/README.md
+
+# Results — commit small tables, ignore big logs
+results/logs/
+results/figures/*.png
+results/tables/*.csv
+
+# Models
+*.pkl
+*.joblib
+*.json
+!configs/*.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
