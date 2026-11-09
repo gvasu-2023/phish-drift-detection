@@ -18,7 +18,7 @@ def calculate_psi(expected, actual, buckets=10):
     def scale_range(input_arr, min_val, max_val):
         input_arr += -(np.min(input_arr))
         if np.max(input_arr) == 0:
-            return input_arr
+            return np.zeros_like(input_arr) # Handle constant arrays safely
         input_arr /= np.max(input_arr) / (max_val - min_val)
         input_arr += min_val
         return input_arr

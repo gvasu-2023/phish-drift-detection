@@ -11,7 +11,12 @@ def expected_calibration_error(y_true, y_prob, n_bins=15):
     n = len(y_true)
     for i in range(n_bins):
         lo, hi = bin_edges[i], bin_edges[i + 1]
-        mask = (y_prob > lo) & (y_prob <= hi)
+        # Fix: Make the first bin inclusive of 0.0
+        if i == 0:
+            mask = (y_prob >= lo) & (y_prob <= hi)
+        else:
+            mask = (y_prob > lo) & (y_prob <= hi)
+            
         if mask.sum() == 0:
             continue
         acc = y_true[mask].mean()

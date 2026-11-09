@@ -7,6 +7,10 @@ def get_shap_importance(model, X_data):
     explainer = shap.TreeExplainer(model)
     shap_values = explainer.shap_values(X_data)
     
+    # Handle different SHAP output formats (list vs array)
+    if isinstance(shap_values, list):
+        shap_values = shap_values[0]
+        
     # Calculate mean absolute SHAP value per feature
     mean_shap = np.abs(shap_values).mean(axis=0)
     

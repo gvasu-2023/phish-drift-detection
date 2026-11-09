@@ -5,6 +5,7 @@ import time
 
 scripts = [
     "scripts/build_temporal_dataset.py",
+    "scripts/train_and_save_model.py"
     "scripts/run_temporal_eval.py",
     "scripts/run_shap_audit.py",
     "scripts/run_prior_adaptation.py",
@@ -13,10 +14,10 @@ scripts = [
     "scripts/run_adversarial_eval.py",
     "scripts/run_adversarial_training.py",
     "scripts/run_multi_year_drift.py",
-    "scripts/train_and_save_model.py",
     "scripts/run_cross_dataset_eval.py",
     "scripts/run_phiusiil_eval.py",
-    "scripts/run_combined_training.py"
+    "scripts/run_combined_training.py",
+    "scripts/run_drift_detection.py"
 ]
 
 def run_script(script):
