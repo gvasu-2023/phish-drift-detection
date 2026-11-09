@@ -1,7 +1,14 @@
 """Streamlit app for Phish-Drift Detection with Bulk Real-time Processing."""
 import sys
 import os
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
+
+# Calculate the absolute path to the 'src' directory
+# __file__ is in src/phishing_detector/app/streamlit_app.py
+# Going up 2 levels ('../..') lands us in 'src'
+src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+if src_dir not in sys.path:
+    sys.path.append(src_dir)
+
 import streamlit as st
 import pandas as pd
 import joblib
