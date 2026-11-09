@@ -12,6 +12,7 @@ scripts = [
     "scripts/run_calibration_ablation.py",
     "scripts/run_adversarial_eval.py",
     "scripts/run_adversarial_training.py",
+    "scripts/run_multi_year_drift.py",
     "scripts/train_and_save_model.py"
 ]
 

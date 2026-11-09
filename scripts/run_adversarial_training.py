@@ -115,6 +115,10 @@ def main():
     eval_attacks = ["clean", "typosquatting", "subdomain_padding", "path_obfuscation"]
     results = []
 
+    # LOAD THE ORIGINAL VULNERABLE MODEL
+    print("\nLoading original vulnerable model for comparison...")
+    original_model = joblib.load("models/xgboost_phish_model.pkl")
+
     for attack in eval_attacks:
         print(f"Evaluating: {attack.upper()}")
         if attack == "clean":
@@ -131,20 +135,22 @@ def main():
         X_eval = pd.DataFrame(X_eval_list)[model.get_booster().feature_names]
         y_eval = test_eval["label"].values
         
-        proba_raw = model.predict_proba(X_eval)[:, 1]
-        acc_raw = accuracy_score(y_eval, (proba_raw >= 0.5).astype(int))
-        ece_raw = expected_calibration_error(y_eval, proba_raw, n_bins=15)
+        # 1. Evaluate Original Vulnerable Model
+        proba_vuln = original_model.predict_proba(X_eval)[:, 1]
+        acc_vuln = accuracy_score(y_eval, (proba_vuln >= 0.5).astype(int))
+        ece_vuln = expected_calibration_error(y_eval, proba_vuln, n_bins=15)
         
-        proba_cal = calibrated_model.predict_proba(X_eval)[:, 1]
-        acc_cal = accuracy_score(y_eval, (proba_cal >= 0.5).astype(int))
-        ece_cal = expected_calibration_error(y_eval, proba_cal, n_bins=15)
+        # 2. Evaluate Robust Adversarially Trained Model
+        proba_robust = model.predict_proba(X_eval)[:, 1]
+        acc_robust = accuracy_score(y_eval, (proba_robust >= 0.5).astype(int))
+        ece_robust = expected_calibration_error(y_eval, proba_robust, n_bins=15)
         
         results.append({
             "Attack Type": attack,
-            "Acc (Raw)": f"{acc_raw:.4f}",
-            "ECE (Raw)": f"{ece_raw:.4f}",
-            "Acc (Cal)": f"{acc_cal:.4f}",
-            "ECE (Cal)": f"{ece_cal:.4f}"
+            "Acc (Raw)": f"{acc_vuln:.4f}",
+            "ECE (Raw)": f"{ece_vuln:.4f}",
+            "Acc (Robust)": f"{acc_robust:.4f}",
+            "ECE (Robust)": f"{ece_robust:.4f}"
         })
 
     res_df = pd.DataFrame(results)
@@ -152,6 +158,38 @@ def main():
     print(res_df.to_string(index=False))
     res_df.to_csv(OUT / "robust_adversarial_results.csv", index=False)
     
+    # 7. Generate the Fixed Plot
+    print("\nGenerating Adversarial Robustness Fix Plot...")
+    plt.figure(figsize=(10, 6))
+    x = np.arange(len(results))
+    width = 0.35
+    
+    # Extract accuracies for plotting
+    raw_accs = [float(r["Acc (Raw)"]) for r in results]
+    robust_accs = [float(r["Acc (Robust)"]) for r in results]
+    
+    plt.bar(x - width/2, raw_accs, width, label='Raw Model (Vulnerable)', color='#C44E52')
+    plt.bar(x + width/2, robust_accs, width, label='Adversarially Trained (Robust)', color='#55A868')
+    
+    plt.ylabel("Classification Accuracy", fontsize=12)
+    plt.title("Impact of Adversarial Training on Model Robustness", fontsize=14)
+    plt.xticks(x, [r["Attack Type"].replace('_', ' ').title() for r in results], rotation=15, fontsize=11)
+    plt.ylim(0, 1.15)
+    
+    # Add text annotations on top of bars
+    for i, v in enumerate(raw_accs):
+        plt.text(i - width/2, v + 0.02, f"{v:.2f}", ha='center', va='bottom', fontsize=10)
+    for i, v in enumerate(robust_accs):
+        plt.text(i + width/2, v + 0.02, f"{v:.2f}", ha='center', va='bottom', fontsize=10)
+        
+    plt.legend(loc='lower right')
+    plt.grid(axis='y', alpha=0.3)
+    plt.tight_layout()
+    
+    plot_path = FIG / "adversarial_robustness_fixed.png"
+    plt.savefig(plot_path, dpi=300)
+    print(f"✅ Fixed Figure saved to {plot_path}")
+
     # Save the robust model for Streamlit
     joblib.dump(model, "models/robust_xgboost_phish_model.pkl")
     print("\n✅ Robust model saved to models/robust_xgboost_phish_model.pkl")
