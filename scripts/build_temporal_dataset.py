@@ -21,8 +21,9 @@ def download_tranco():
     df = pd.read_csv(z.open(csv_filename), names=["rank", "domain"])
     # Keep top 100,000 to balance the dataset
     df = df.head(100000)
-    # Add scheme to make valid URLs
-    df["url"] = "http://" + df["domain"]
+    import random
+    # Randomly add http or https to prevent data leakage
+    df["url"] = df["domain"].apply(lambda x: f"{random.choice(['http', 'https'])}://{x}")
     # Tranco is updated daily; we will use today's date for these
     df["timestamp"] = pd.Timestamp.now().normalize()
     df["label"] = 0  # Benign
