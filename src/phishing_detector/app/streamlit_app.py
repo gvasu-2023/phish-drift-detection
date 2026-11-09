@@ -2,8 +2,9 @@
 import sys
 import os
 
-# Calculate the absolute path to the 'src' directory
-src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
+# Calculate the absolute path to the ROOT directory
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..'))
+src_dir = os.path.join(ROOT_DIR, 'src')
 if src_dir not in sys.path:
     sys.path.append(src_dir)
 
@@ -17,20 +18,25 @@ st.set_page_config(page_title="Phish-Drift Detector", page_icon="🛡️", layou
 
 @st.cache_resource
 def load_model():
-    # Use the robust model we just trained
-    model = joblib.load("models/combined_xgboost_phish_model.pkl")
-    features = joblib.load("models/model_features.pkl")
+    model_path = os.path.join(ROOT_DIR, "models", "combined_xgboost_phish_model.pkl")
+    features_path = os.path.join(ROOT_DIR, "models", "model_features.pkl")
+    
+    if not os.path.exists(model_path) or not os.path.exists(features_path):
+        return None, None
+        
+    model = joblib.load(model_path)
+    features = joblib.load(features_path)
     return model, features
 
-try:
-    model, feature_cols = load_model()
-except FileNotFoundError:
-    st.error("Model not found! Please run `python scripts/run_adversarial_training.py` first.")
+model, feature_cols = load_model()
+
+if model is None:
+    st.error("Model files not found in the repository! Please ensure the .pkl files are pushed to GitHub.")
     st.stop()
 
 st.title("🛡️ Phish-Drift Real-Time Detection System")
 st.markdown("### Calibrated, Drift-Aware Phishing URL Detection")
-st.markdown("Paste one or multiple URLs below to analyze them in real-time using our Robust XGBoost model.")
+st.markdown("Paste one or multiple URLs below to analyze them in real-time using our Combined Robust XGBoost model.")
 
 # Text area for multiple URLs
 url_input = st.text_area(
@@ -76,12 +82,11 @@ if st.button("Analyze URLs"):
         st.subheader("Analysis Results")
         df_results = pd.DataFrame(results)
         
-        # Color coding the table (Fixed for new pandas versions)
+        # Color coding the table
         def highlight_status(val):
             color = '#ffcccc' if 'PHISHING' in val else '#ccffcc'
             return f'background-color: {color}'
             
-        # Note: .applymap was changed to .map in newer pandas versions
         st.dataframe(df_results.style.map(highlight_status, subset=['Prediction']), use_container_width=True)
         
         # Summary Metrics
