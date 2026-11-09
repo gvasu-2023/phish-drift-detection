@@ -3,8 +3,6 @@ import sys
 import os
 
 # Calculate the absolute path to the 'src' directory
-# __file__ is in src/phishing_detector/app/streamlit_app.py
-# Going up 2 levels ('../..') lands us in 'src'
 src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 if src_dir not in sys.path:
     sys.path.append(src_dir)
@@ -78,12 +76,13 @@ if st.button("Analyze URLs"):
         st.subheader("Analysis Results")
         df_results = pd.DataFrame(results)
         
-        # Color coding the table
+        # Color coding the table (Fixed for new pandas versions)
         def highlight_status(val):
             color = '#ffcccc' if 'PHISHING' in val else '#ccffcc'
             return f'background-color: {color}'
             
-        st.dataframe(df_results.style.applymap(highlight_status, subset=['Prediction']), use_container_width=True)
+        # Note: .applymap was changed to .map in newer pandas versions
+        st.dataframe(df_results.style.map(highlight_status, subset=['Prediction']), use_container_width=True)
         
         # Summary Metrics
         phish_count = sum(1 for r in results if "PHISHING" in r["Prediction"])
