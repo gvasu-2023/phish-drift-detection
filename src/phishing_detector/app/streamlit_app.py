@@ -18,7 +18,7 @@ st.set_page_config(page_title="Phish-Drift Detector", page_icon="🛡️", layou
 
 @st.cache_resource
 def load_model():
-    model_path = os.path.join(ROOT_DIR, "models", "combined_xgboost_phish_model.pkl")
+    model_path = os.path.join(ROOT_DIR, "models", "production_xgboost_model.pkl")
     features_path = os.path.join(ROOT_DIR, "models", "model_features.pkl")
     
     if not os.path.exists(model_path) or not os.path.exists(features_path):
