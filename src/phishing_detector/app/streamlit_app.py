@@ -18,7 +18,7 @@ st.set_page_config(page_title="Phish-Drift Detector", page_icon="🛡️", layou
 @st.cache_resource
 def load_model():
     # Use the robust model we just trained
-    model = joblib.load("models/robust_xgboost_phish_model.pkl")
+    model = joblib.load("models/combined_xgboost_phish_model.pkl")
     features = joblib.load("models/model_features.pkl")
     return model, features
 

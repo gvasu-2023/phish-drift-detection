@@ -13,7 +13,10 @@ scripts = [
     "scripts/run_adversarial_eval.py",
     "scripts/run_adversarial_training.py",
     "scripts/run_multi_year_drift.py",
-    "scripts/train_and_save_model.py"
+    "scripts/train_and_save_model.py",
+    "scripts/run_cross_dataset_eval.py",
+    "scripts/run_phiusiil_eval.py",
+    "scripts/run_combined_training.py"
 ]
 
 def run_script(script):
