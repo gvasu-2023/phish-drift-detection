@@ -1,7 +1,6 @@
 """Real-World Threat Intelligence Layer: Redirects and Domain Age."""
 import requests
 from urllib.parse import urlparse
-import whois
 from datetime import datetime
 import tldextract
 import socket
