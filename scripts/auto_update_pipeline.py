@@ -26,7 +26,7 @@ MODEL_DIR.mkdir(parents=True, exist_ok=True)
 def download_live_phishtank():
     print("🌐 [1/5] Downloading live PhishTank feed...")
     url = "http://data.phishtank.com/data/online-valid.csv"
-    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"}
+    headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
     try:
         response = requests.get(url, headers=headers, timeout=15)
         response.raise_for_status()
@@ -35,15 +35,14 @@ def download_live_phishtank():
         df['label'] = 1 
         print(f"   ✅ Downloaded {len(df)} live phishing URLs.")
         return df
-    except Exception as e:
-        print(f"   ⚠️ Could not download live feed (403 Blocked). Skipping live data.")
+    except Exception:
+        print(f"   ⚠️ Could not download live feed. Skipping live data.")
         return pd.DataFrame(columns=["url", "label"])
 
 # --- 2. Targeted Chaos Generation ---
 def generate_chaos_data():
-    print("🧬 [2/5] Generating Targeted Chaos Data...")
+    print("🧬 [2/5] Generating Targeted Chaos Data (Curing Subdomain Bias)...")
     
-    # Explicitly define the failing URLs to force the model to learn them
     targeted_attacks = [
         "https://amaz0n-support-portal-orders-verification.net",
         "https://support-device-recovery.com",
@@ -56,6 +55,8 @@ def generate_chaos_data():
     ]
     
     targeted_benign = [
+        "https://chat.deepseek.com",
+        "https://www.perplexity.ai",
         "https://medium-blog-about-technology-2026.com/article/ai.html",
         "https://www.bbc-news-update-2025.com/article/tech.html",
         "https://github-docs-2026.com/docs/help",
@@ -71,7 +72,7 @@ def generate_chaos_data():
     benign_words = ["blog", "article", "news", "help", "faq", "docs", "store", "product", "technology", "review"]
     domains = ["medium", "wordpress", "github", "nytimes", "techcrunch", "wired", "forbes"]
 
-    # Generate exactly 5000 random attacks
+    # Generate 5000 random attacks
     for _ in range(5000):
         if random.random() < 0.25:
             brand = random.choice(brands)
@@ -89,23 +90,27 @@ def generate_chaos_data():
             idx = random.randint(1, len(brand)-1)
             attacks.append(f"http://{brand[:idx]}\u200b{brand[idx:]}.com/login")
 
-    # Generate exactly 5000 random benign URLs (Balanced 1:1 ratio)
-    for _ in range(5000):
-        d = random.choice(domains)
-        w1, w2 = random.sample(benign_words, 2)
-        year = random.randint(2018, 2026)
+    # Generate 20,000 random benign URLs with subdomains and modern TLDs
+    safe_root_domains = ["google", "github", "microsoft", "apple", "deepseek", "openai", "perplexity", "anthropic"]
+    subdomains = ["www", "mail", "chat", "docs", "api", "blog", "news", "support", "store", "play"]
+    
+    for _ in range(20000):
+        root = random.choice(safe_root_domains)
+        sub = random.choice(subdomains)
+        tld = random.choice([".com", ".org", ".net", ".io", ".ai", ".co", ".dev", ".app"]) 
+        w1 = random.choice(benign_words)
+        
         if random.random() < 0.5:
-            benign.append(f"https://www.{d}-{w1}-{w2}-{year}.com/article/page.html")
+            benign.append(f"https://{sub}.{root}{tld}/{w1}")
         else:
-            benign.append(f"https://{d}.com/{w1}/{w2}-{year}-update")
+            benign.append(f"https://{sub}.{root}{tld}/{w1}/{random.randint(100, 9999)}")
 
-    # Create the DataFrame
     df_targeted = pd.DataFrame({
         "url": attacks + benign,
         "label": [1] * len(attacks) + [0] * len(benign)
     })
     
-    # Oversample the targeted URLs 10x to ensure the model pays attention to them
+    # Oversample targeted URLs 10x
     df_oversampled = pd.concat([df_targeted] + [df_targeted[df_targeted['url'].isin(targeted_attacks + targeted_benign)]] * 10)
     
     return df_oversampled
@@ -137,14 +142,15 @@ def main():
 
     # Test
     test_urls = [
+        "https://chat.deepseek.com", 
+        "https://www.perplexity.ai",
         "https://amaz0n-support-portal-orders-verification.net", 
-        "https://support-device-recovery.com",
         "https://medium-blog-about-technology-2026.com/article/ai.html"
     ]
     test_X = pd.DataFrame([extract_features(u) for u in test_urls]).drop(columns=['tld'], errors='ignore')
     probs = model.predict_proba(test_X)[:, 1]
     
-    print("\n🔎 Sanity Check on failing URLs:")
+    print("\n🔎 Sanity Check on URLs:")
     for u, p in zip(test_urls, probs):
         print(f"   {'PHISHING' if p > 0.5 else 'SAFE':9} ({p*100:.2f}%) | {u}")
 
